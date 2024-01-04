@@ -82,3 +82,43 @@ inner join film_actor as fa
 	on max_actor.actor_id = fa.actor_id
 inner join film as f
 	on fa.film_id = f.film_id;
+    
+-- 7. Find the films rented by the most profitable customer in the Sakila database. 
+-- You can use the customer and payment tables to find the most profitable customer, i.e., the customer who has made the largest sum of payments.
+
+select distinct tab.first_name, tab.last_name, tab.total, f.film_id, f.title 
+from 
+(
+	select p.customer_id, c.first_name, c.last_name, sum(amount) as total
+	from payment as p
+	inner join customer as c
+		on p.customer_id = c.customer_id
+	group by customer_id
+	having total = (select max(total) 
+					from (
+						select customer_id, sum(amount) as total
+						from payment
+						group by customer_id
+						) as max_tot
+					)
+) as tab
+inner join rental as r
+	on tab.customer_id = r.customer_id
+inner join inventory as inv
+	on r.inventory_id = inv.inventory_id
+inner join film as f
+	on inv.film_id = f.film_id;
+
+-- 8. Retrieve the client_id and the total_amount_spent of those clients who spent more than the average of the total_amount spent by each client.
+-- You can use subqueries to accomplish this.
+
+select customer_id, sum(amount) as total_amount_spent
+from payment
+group by customer_id 
+having total_amount_spent > (select avg(tot_amount) 
+							from (
+								select customer_id, sum(amount) as tot_amount
+								from payment
+								group by customer_id
+                                ) as avg_amount
+                            );	
